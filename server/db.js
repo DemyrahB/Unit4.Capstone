@@ -58,8 +58,76 @@ const destroyCart = async({user_id, id})=>{
     DELETE FROM cart WHERE user_id=$1 AND id=$2
     `;
     await client.query(SQL, [user_id, id])
+};
+
+const fetchUsers = async()=>{
+    const SQL = `
+    SELECT id, username FROM users;
+    `
+    const response = await client.query(SQL);
+    return response.rows;
+};
+
+const fetchProducts = async()=>{
+    const SQL = `
+    SELECT * FROM products;
+    `
+    const response = await client.query(SQL);
+    return response.rows;
 }
 
+const fetchProduct = async({id})=>{
+    const SQL = `
+    SELECT id, name FROM products WHERE id=$1
+    `
+    const response = await client.query(SQL);
+    return response.rows;
+}
+
+const fetchCart = async(user_id)=>{
+    const SQL = `
+    SELECT * FROM cart WHERE user_id = $1
+    `;
+    const response = await client.query(SQL, [user_id]);
+    return response.rows;
+};
+
+const authenticate = async({username, password})=>{
+    const SQL = `
+    SELECT id, username, password FROM users WHERE username=$1;
+    `
+    const response = await client.query(SQL, [username]);
+    if(!response.rows.length || (await bcrypt.compare(password, response.rows[0].password))=== false){
+        const error = Error('not authorized');
+        error.status = 401;
+        throw error;
+    }
+    const token = await jwt.sign({id: response.rows[0].id, JWT});
+    console.log(token);
+    return {token: response.rows[0].id};
+};
+
+    const findUserWithToken = async(id)=>{
+        try {
+            const payload = await jwt.verify(token, JWT);
+            id = payload.id;
+        } catch (ex) {
+            const error = Error('not authorized');
+            error.status = 401;
+            throw error;
+        }
+        const SQL = `
+        SELECT id, username FROM users WHERE id=$1;
+        `;
+        const response = await client.query(SQL, [id]);
+        if(!response.rows.length){
+            const error = Error('not authorized');
+            error.status = 401;
+            throw error
+        }
+        return response.rows[0]
+};
+
 module.exports = {
-    client, createTables, createUser, createProduct
+    client, createTables, createUser, createProduct, createCart, fetchUsers, fetchProducts, fetchCart, destroyCart, authenticate, findUserWithToken, fetchProduct
 }

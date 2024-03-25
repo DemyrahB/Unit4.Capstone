@@ -3,15 +3,101 @@ const app = express();
 app.use(require('morgan')('dev'));
 app.use(express.json());
 const port = 3000;
-const{client, createTables, createUser, createProduct} = require('./db');
+const{client, createTables, createUser, createProduct, createCart, fetchUsers, fetchProducts, fetchCart, destroyCart, authenticate, findUserWithToken, fetchProduct} = require('./db');
 
 app.get('/api/users', async(req, res, next) => {
     try {
-        
-    } catch (error) {
-        
+        res.send(await fetchUsers());
+    } catch(ex) {
+        next(ex)
+    }
+});
+
+app.get('/api/products', async (req, res, next)=>{
+    try {
+        res.send(await fetchProducts());
+    } catch (ex) {
+        next(ex)
+    };
+});
+
+app.get('/api/products/:id', async (req, res, next)=>{
+    try {
+        res.send(await fetchProduct());
+    } catch (ex) {
+        next(ex)
     }
 })
+
+app.get('/api/users/:id/cart', async(req, res, next)=>{
+    try {
+        if(req.params.id !== req.user.id){
+            const error = Error('not authorized')
+            error.status = 401;
+            throw error;
+        }
+        res.status(201).send(await createCart({user_id: req.params.id, product_id: req.body.product_id}));
+    } catch (ex) {
+        next(ex)
+    };
+});
+
+app.post('/api/users/:id/cart', async(req, res, next)=>{
+    try {
+        if(req.params.id !== req.user.id){
+            const error = Error('not authorized');
+            error.status = 401
+            throw error;
+        } 
+        res.status(201).send(await createCart({user_id: req.params.id, product_id: req.body.product_id}));
+    } catch (ex) {
+        next(ex);
+    }
+});
+
+const isLoggedIn = async(req, res, next) => {
+    try {
+        req.user = await findUserWithToken(req.headers.authorization);
+    } catch (ex) {
+        next(ex);
+    }
+}
+
+app.get('/api/auth/me', isLoggedIn, async (req, res, next) =>{
+    try {
+        res.send(req.user);
+    } catch (ex) {
+        next(ex)
+    }
+});
+
+app.post('/api/auth/login', async (req, res, next) => {
+    try {
+        res.send(await authenticate(req.body));
+    } catch (ex) {
+        next(ex);
+    }
+});
+
+app.delete('/api/users/:user_id/favorites/:id', async (req, res, next)=>{
+    try {
+        if(req.params.userId !== req.user.id){
+            const error = Error('not authorized');
+            error.status = 401;
+            throw error;
+        }
+        await destroyCart({user_id: req.params.user_id, id: req.params.id})
+        res.sendStatus(204);
+    } catch (ex) {
+        next(ex)
+    }
+})
+
+app.use((err, req, res, next) => {
+    console.log(err)
+    res.status(err.status || 500).send({error: err.message ? err.message : err});
+});
+
 
 const init = async()=>{
     await client.connect();
@@ -33,9 +119,18 @@ const init = async()=>{
         createProduct({name: 'Beauty'}),
         createProduct({name: 'Health'}),
         createProduct({name: 'Industrial'}),
-        createProduct({name: 'Kitchen'})
-    ])
-    
+        createProduct({name: 'Kitchen'}),
+    ]);
+    console.log(await fetchUsers());
+    console.log(await fetchProducts());
+
+    const cart = await Promise.all([
+        createCart({user_id: Abby.id, product_id: Electronics.id}),
+        createCart({user_id: Brian.id, product_id: Industrial.id}),
+        createCart({user_id: Carla.id, product_id: Beauty.id}),
+        createCart({user_id: Ethan.id, product_id: Apparel.id})
+    ]);
+    console.log(await fetchCart(Brian.id))
     app.listen(port, ()=>{
         console.log('You are connected to the database at port ' + port)
     })
