@@ -112,23 +112,23 @@ const init = async()=>{
         createUser({username: 'Frank', password: 'enstein'}),
         createUser({username: 'Gale', password: 'wind'}),
         createUser({username: 'Helen', password: 'hunt'}),
-        createProduct({name: 'Electronics'}),
-        createProduct({name: 'Groceries'}),
-        createProduct({name: 'Apparel'}),
-        createProduct({name: 'Books'}),
-        createProduct({name: 'Beauty'}),
-        createProduct({name: 'Health'}),
-        createProduct({name: 'Industrial'}),
-        createProduct({name: 'Kitchen'}),
+        createProduct({name: 'Electronics', price: 699.00}),
+        createProduct({name: 'Groceries', price: 120.00}),
+        createProduct({name: 'Apparel', price: 80.00}),
+        createProduct({name: 'Books', price: 45.00}),
+        createProduct({name: 'Beauty', price: 200.00}),
+        createProduct({name: 'Health', price: 1000.00}),
+        createProduct({name: 'Industrial', price: 800.00}),
+        createProduct({name: 'Kitchen', price: 1200.00}),
     ]);
     console.log(await fetchUsers());
     console.log(await fetchProducts());
 
     const cart = await Promise.all([
-        createCart({user_id: Abby.id, product_id: Electronics.id}),
-        createCart({user_id: Brian.id, product_id: Industrial.id}),
-        createCart({user_id: Carla.id, product_id: Beauty.id}),
-        createCart({user_id: Ethan.id, product_id: Apparel.id})
+        createCart({user_id: Abby.id, product_id: Electronics.id, quantity: 2}),
+        createCart({user_id: Brian.id, product_id: Industrial.id, quantity: 8}),
+        createCart({user_id: Carla.id, product_id: Beauty.id, quantity: 4}),
+        createCart({user_id: Ethan.id, product_id: Apparel.id, quantity: 6})
     ]);
     console.log(await fetchCart(Brian.id))
     app.listen(port, ()=>{

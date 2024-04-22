@@ -9,7 +9,8 @@ const createTables = async()=>{
     const SQL = `
     DROP TABLE IF EXISTS users CASCADE;
     DROP TABLE IF EXISTS products CASCADE;
-    DROP TABLE IF EXISTS cart;
+    DROP TABLE IF EXISTS cart CASCADE;
+    DROP TABLE IF EXISTS cart_items;
     CREATE TABLE users(
         id UUID PRIMARY KEY, 
         username VARCHAR(20) UNIQUE NOT NULL,
@@ -17,14 +18,17 @@ const createTables = async()=>{
     );
     CREATE TABLE products(
         id UUID PRIMARY KEY, 
-        name VARCHAR(255)
+        name VARCHAR(255),
+        price INTEGER
     );
     CREATE TABLE cart(
         id UUID PRIMARY KEY,
         user_id UUID REFERENCES users(id) NOT NULL,
         product_id UUID REFERENCES products(id) NOT NULL,
+        quantity INTEGER,
         CONSTRAINT unique_user_id_and_product_id UNIQUE (user_id, product_id)
     );
+ 
     `;
     await client.query(SQL);
 };
@@ -37,19 +41,19 @@ const createUser = async({username, password})=>{
     return response.rows[0];
 };
 
-const createProduct = async({name})=>{
+const createProduct = async({name, price})=>{
     const SQL = `
-    INSERT INTO products(id, name) VALUES ($1, $2) RETURNING *
+    INSERT INTO products(id, name, price) VALUES ($1, $2, $3) RETURNING *
     `;
-    const response = await client.query(SQL, [uuid.v4(), name]);
+    const response = await client.query(SQL, [uuid.v4(), name, price]);
     return response.rows[0];
 };
 
-const createCart = async({user_id, product_id})=>{
+const createCart = async({user_id, product_id, quantity})=>{
     const SQL = `
-    INSERT INTO cart (id, user_id, product_id) VALUES ($1, $2, $3) RETURNING *
+    INSERT INTO cart (id, user_id, product_id, quantity) VALUES ($1, $2, $3, $4) RETURNING *
     `;
-    const response = await client.query(SQL, [uuid.v4(), user_id, product_id]);
+    const response = await client.query(SQL, [uuid.v4(), user_id, product_id, quantity]);
     return response.rows[0];
 };
 
